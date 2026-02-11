@@ -1,8 +1,8 @@
 streamlit
-tensorflow==2.20.0
-matplotlib
+tensorflow==2.15.0      # or 2.12.0 / 2.13.0 — 2.15 is usually stable
 numpy
-opencv-python-headless
+matplotlib
+opencv-python-headless  # headless = better on cloud
 pandas
 Pillow
 scipy
