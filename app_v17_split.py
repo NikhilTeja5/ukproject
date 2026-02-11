@@ -20,7 +20,7 @@ import gc
 import zipfile
 
 # ────────────────────────────────────────────────
-# Base directory (works both locally and on Streamlit Cloud)
+# Base directory (works locally + on cloud)
 # ────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent.resolve()
 
@@ -66,7 +66,7 @@ else:
     st.warning("No GPU detected — running on CPU.")
 
 # ────────────────────────────────────────────────
-# Custom objects (losses / metrics)
+# Custom objects
 # ────────────────────────────────────────────────
 def tversky_loss(y_true, y_pred, alpha=0.3, beta=0.7, gamma=1.5, smooth=1e-6):
     y_true = tf.keras.backend.flatten(y_true)
@@ -109,19 +109,18 @@ custom_objects = {
 }
 
 # ────────────────────────────────────────────────
-# Load model with compatibility fix
+# Load model
 # ────────────────────────────────────────────────
-@st.cache_resource(show_spinner="Loading model (this may take a moment)...")
+@st.cache_resource(show_spinner="Loading model...")
 def load_model():
     model_path = BASE_DIR / "models" / "SDU_best_fold_1.h5"
     
     if not model_path.exists():
-        st.error(f"Model file not found at: {model_path}")
-        st.error("Make sure the file is uploaded to the 'models' folder in your GitHub repository.")
+        st.error(f"Model file not found: {model_path}")
+        st.error("Upload SDU_best_fold_1.h5 to the 'models' folder in GitHub.")
         st.stop()
 
     try:
-        # safe_mode=False is the key to bypass the 'groups' argument error
         model = tf.keras.models.load_model(
             model_path,
             custom_objects=custom_objects,
@@ -131,14 +130,14 @@ def load_model():
         st.success("Model loaded successfully!")
         return model
     except Exception as e:
-        st.error("Failed to load model. Detailed error:")
+        st.error("Failed to load model.")
         st.exception(e)
         st.stop()
 
 model = load_model()
 
 # ────────────────────────────────────────────────
-# Your functions (unchanged except minor fixes)
+# Core functions
 # ────────────────────────────────────────────────
 def crop_image(image, x, y, w, h):
     return image[y:y+h, x:x+w]
@@ -152,10 +151,7 @@ def count_cells(image, model, crop_params):
 
     pad_h = (patch_size - h_img % patch_size) % patch_size
     pad_w = (patch_size - w_img % patch_size) % patch_size
-    padded_image = cv2.copyMakeBorder(
-        image, 0, pad_h, 0, pad_w,
-        cv2.BORDER_CONSTANT, value=0
-    )
+    padded_image = cv2.copyMakeBorder(image, 0, pad_h, 0, pad_w, cv2.BORDER_CONSTANT, value=0)
 
     H, W, _ = padded_image.shape
     predicted_mask = np.zeros((H, W), dtype=np.uint8)
@@ -170,7 +166,7 @@ def count_cells(image, model, crop_params):
             patches.append(patch)
             coords.append((x_patch, y_patch))
 
-    if len(patches) == 0:
+    if not patches:
         return 0, np.zeros((h_img, w_img), dtype=np.uint8), 0.0, []
 
     patches = np.array(patches)
@@ -181,14 +177,14 @@ def count_cells(image, model, crop_params):
         preds = model.predict(batch, verbose=0)
         preds = (preds > 0.5).astype(np.uint8)
         for j, pred in enumerate(preds):
-            x_patch, y_patch = coords[i + j]
-            predicted_mask[y_patch:y_patch+patch_size, x_patch:x_patch+patch_size] = pred.squeeze()
+            xp, yp = coords[i + j]
+            predicted_mask[yp:yp+patch_size, xp:xp+patch_size] = pred.squeeze()
 
-    predicted_mask = predicted_mask[:h_img, :w_img].astype(np.uint8)
+    predicted_mask = predicted_mask[:h_img, :w_img]
 
-    labeled_image = label(predicted_mask)
-    props = regionprops(labeled_image)
-    areas = [round(float(prop.area), 4) for prop in props if prop.area > 0]
+    labeled = label(predicted_mask)
+    props = regionprops(labeled)
+    areas = [round(float(p.area), 4) for p in props if p.area > 0]
     total_area = round(float(sum(areas)), 10)
 
     return len(props), predicted_mask, total_area, areas
@@ -200,16 +196,17 @@ def save_image(image, filename, save_dir):
     image.save(os.path.join(save_dir, filename))
 
 def save_mask(prediction, filename, save_dir):
-    mask_image = Image.fromarray((prediction * 255).astype(np.uint8))
-    mask_image.save(os.path.join(save_dir, filename))
+    Image.fromarray((prediction * 255).astype(np.uint8)).save(os.path.join(save_dir, filename))
 
 def process_and_save(images, label, threshold, save_dir=None):
-    st.write(f"### Results for {label}")
-    crop_params = crop_settings.get(label, (0, 0, 512, 512))  # fallback
+    st.subheader(f"Results for {label}")
+    crop_params = crop_settings.get(label, (0, 0, 512, 512))
 
     for idx, uploaded_file in enumerate(images):
         image = Image.open(uploaded_file)
         cell_count, prediction, total_area, areas = count_cells(image, model, crop_params)
+
+        # Safely extend areas (already guaranteed to exist)
         areas_groups[label].extend(areas)
 
         image_results.append({
@@ -222,13 +219,13 @@ def process_and_save(images, label, threshold, save_dir=None):
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.markdown("#### Original Image")
+            st.markdown("**Original Image**")
             st.image(image, use_container_width=True)
             if save_dir:
                 save_image(image, f"{label}_original_{idx+1}.png", save_dir)
 
         with col2:
-            st.markdown("#### Predicted Mask")
+            st.markdown("**Predicted Mask**")
             fig, ax = plt.subplots()
             cmap = 'gray' if len(np.unique(prediction)) <= 2 else 'viridis'
             ax.imshow(prediction, cmap=cmap)
@@ -242,7 +239,7 @@ def process_and_save(images, label, threshold, save_dir=None):
             st.markdown(f"""
             **Statistics**  
             Fluorescent Signals: **{cell_count}**  
-            Total Area: **{total_area}** px²
+            Total Area: **{total_area} px²**
             """)
 
 def create_save_directory():
@@ -292,18 +289,23 @@ with col3:
 with col4:
     label_g4 = st.text_input("Group 4", "Image Set 4")
 
+# IMPORTANT: Dynamically ensure every current label has a list
+for lbl in [label_g1, label_g2, label_g3, label_g4]:
+    if lbl and lbl not in areas_groups:
+        areas_groups[lbl] = []
+
 st.markdown("### Upload Images")
 col5, col6 = st.columns(2)
 with col5:
-    files_g1 = st.file_uploader("Group 1", accept_multiple_files=True, type=["jpg","jpeg","png","tif"])
+    files_g1 = st.file_uploader("Group 1", accept_multiple_files=True, type=["jpg", "jpeg", "png", "tif"])
 with col6:
-    files_g2 = st.file_uploader("Group 2", accept_multiple_files=True, type=["jpg","jpeg","png","tif"])
+    files_g2 = st.file_uploader("Group 2", accept_multiple_files=True, type=["jpg", "jpeg", "png", "tif"])
 
 col7, col8 = st.columns(2)
 with col7:
-    files_g3 = st.file_uploader("Group 3", accept_multiple_files=True, type=["jpg","jpeg","png","tif"])
+    files_g3 = st.file_uploader("Group 3", accept_multiple_files=True, type=["jpg", "jpeg", "png", "tif"])
 with col8:
-    files_g4 = st.file_uploader("Group 4", accept_multiple_files=True, type=["jpg","jpeg","png","tif"])
+    files_g4 = st.file_uploader("Group 4", accept_multiple_files=True, type=["jpg", "jpeg", "png", "tif"])
 
 # Crop settings
 st.sidebar.markdown("### Crop Settings")
@@ -311,14 +313,14 @@ crop_settings = {}
 for lbl in [label_g1, label_g2, label_g3, label_g4]:
     if lbl:
         st.sidebar.subheader(lbl)
-        x = st.sidebar.number_input(f"{lbl} x", 0, 3000, 15)
-        y = st.sidebar.number_input(f"{lbl} y", 0, 3000, 48)
-        w = st.sidebar.number_input(f"{lbl} width", 10, 4000, 2529)
-        h = st.sidebar.number_input(f"{lbl} height", 10, 3000, 1947)
+        x = st.sidebar.number_input(f"{lbl} x", 0, 4000, 15)
+        y = st.sidebar.number_input(f"{lbl} y", 0, 4000, 48)
+        w = st.sidebar.number_input(f"{lbl} width", 10, 5000, 2529)
+        h = st.sidebar.number_input(f"{lbl} height", 10, 4000, 1947)
         crop_settings[lbl] = (x, y, w, h)
 
 # ────────────────────────────────────────────────
-# Processing
+# Run Processing
 # ────────────────────────────────────────────────
 if st.button("Run Processing"):
     st.session_state['evaluation_triggered'] = True
@@ -327,21 +329,25 @@ if st.button("Run Processing"):
 
     if any([files_g1, files_g2, files_g3, files_g4]):
         with st.spinner("Processing images..."):
-            if files_g1: process_and_save(files_g1, label_g1, threshold, save_dir)
-            if files_g2: process_and_save(files_g2, label_g2, threshold, save_dir)
-            if files_g3: process_and_save(files_g3, label_g3, threshold, save_dir)
-            if files_g4: process_and_save(files_g4, label_g4, threshold, save_dir)
+            if files_g1:
+                process_and_save(files_g1, label_g1, threshold, save_dir)
+            if files_g2:
+                process_and_save(files_g2, label_g2, threshold, save_dir)
+            if files_g3:
+                process_and_save(files_g3, label_g3, threshold, save_dir)
+            if files_g4:
+                process_and_save(files_g4, label_g4, threshold, save_dir)
 
         st.success("Processing completed!")
     else:
-        st.warning("Please upload at least one group of images.")
+        st.warning("Upload at least one group of images.")
 
 # ────────────────────────────────────────────────
-# Download
+# Download Results
 # ────────────────────────────────────────────────
 if st.sidebar.button("Download Results"):
     if st.session_state.get('save_dir') and st.session_state.get('evaluation_triggered'):
-        with st.spinner("Creating ZIP file..."):
+        with st.spinner("Creating ZIP..."):
             zip_path = zip_dir(st.session_state['save_dir'])
             with open(zip_path, "rb") as f:
                 st.download_button(
