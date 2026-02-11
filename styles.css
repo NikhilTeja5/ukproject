@@ -1,0 +1,193 @@
+
+.stTextInput input {
+    background-color: #e3f2fd;  /* Light blue background for text input */
+    border: 2px solid #1976d2;  /* Blue border */
+    border-radius: 8px;
+    color: #0d47a1;  /* Dark blue text */
+    padding: 10px;
+    font-size: 16px;
+}
+
+.stTextInput label {
+    color: #004d40;  /* Dark green color for label */
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Sidebar Styling */
+.stSidebar {
+    background-color: #ffffff;  /* Clean white background for sidebar */
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);  /* Soft shadow effect */
+}
+
+/* Header Style for Sidebar */
+.stSidebar .stMarkdown h3 {
+    color: #4caf50;  /* Fresh green color for headers */
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+/* Style for sliders and inputs inside the sidebar */
+.stSidebar .stSlider {
+    margin-top: 20px;
+}
+
+.stSidebar .stSlider input[type="range"] {
+    background-color: #4caf50; /* Green color for the slider */
+    height: 8px;
+    border-radius: 10px;
+}
+
+.stSidebar .stTextInput input {
+    background-color: #f1f1f1;  /* Light gray background for text input */
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    color: #333;
+}
+
+.stSidebar .stFileUploader {
+    background-color: #e0f7fa;  /* Soft cyan for file uploaders */
+    border: 2px solid #4caf50;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    color: #333;
+}
+
+.stSidebar .stFileUploader:hover {
+    border-color: #00796b;  /* Darker green on hover */
+}
+
+/* Styling for the section labels (e.g., Group Labels) */
+.stSidebar .stMarkdown p {
+    color: #333;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+/* General styling for buttons */
+.stButton button {
+    background-color: #4caf50;
+    color: white;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 14px;
+    border: none;
+}
+
+.stButton button:hover {
+    background-color: #388e3c;  /* Slightly darker green on hover */
+}
+
+/* Content area (main window) */
+.stApp {
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05); /* Soft shadow for the main container */
+}
+
+/* Content elements */
+.stImage {
+    border-radius: 10px;
+}
+
+.stMarkdown {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #555;
+}
+
+/* Style for individual cards (Results) */
+.card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card h4 {
+    color: #4caf50;
+    margin-top: 0;
+    font-weight: 600;
+}
+
+.stFileUploader {
+    background-color: #ffffff!important;  /* Light cyan background */
+    border: 2px solid #00796b !important;  /* Darker cyan border */
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.css-1cpxqw2 {  /* This targets the file uploader text */
+    color: white !important;
+}
+
+.stFileUploader label {
+    color: white !important;
+}
+/* Specifically targeting the drag-and-drop area */
+.stFileUploader div[data-testid="stFileUploaderDropzone"] {
+    background-color: #e0f7fa !important;  /* Light cyan background */
+    border: 2px dashed #00796b !important;  /* Dashed border */
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Change the text color inside the drag-and-drop area */
+.stFileUploader div[data-testid="stFileUploaderDropzone"] p {
+    color: white !important;  /* Make the text white */
+    font-size: 16px !important;  /* Optional: Adjust font size */
+}
+
+/* Customize file input area text */
+.stFileUploader input[type="file"] {
+    color: transparent !important;  /* Hide the default text color */
+}
+
+.stFileUploader label {
+    color: #004d40 !important;  /* Dark green for the label */
+    font-weight: bold !important;
+    font-size: 16px !important;
+}
+
+/* Optional: Style the file upload button (the 'Browse' button) */
+.stFileUploader button {
+    background-color: #00796b !important; /* Button background */
+    color: white !important;  /* Button text color */
+    border-radius: 5px !important;
+    padding: 8px 16px !important;
+}
+
+
+/* Style for Statistics Box */
+.stats {
+    background-color: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+/* Style for Text Inside Stats */
+.stats p {
+    margin: 5px 0;
+}
+
+.stats code {
+    font-size: 18px;
+    background-color: #f0f0f0;
+    padding: 2px 8px;
+    border-radius: 5px;
+}
+
